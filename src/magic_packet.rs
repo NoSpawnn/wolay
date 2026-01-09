@@ -1,3 +1,5 @@
+use std::net::{Ipv4Addr, UdpSocket};
+
 pub type MacAddress = [u8; 6];
 
 // magic packet is a frame that contains 6 bytes of all 255 (FF FF FF FF FF FF in hexadecimal),
@@ -5,7 +7,7 @@ pub type MacAddress = [u8; 6];
 // for a total of 102 bytes
 #[derive(Debug)]
 pub struct MagicPacket {
-    pub bytes: [u8; Self::SIZE],
+    bytes: [u8; Self::SIZE],
 }
 
 impl MagicPacket {
@@ -21,5 +23,21 @@ impl MagicPacket {
             .for_each(|c| c.copy_from_slice(mac_address));
 
         Self { bytes }
+    }
+
+    /// Send this magic packet, letting the OS choose source port and interface.
+    pub fn send(&self) -> std::io::Result<()> {
+        let source = (Ipv4Addr::new(0, 0, 0, 0), 0);
+        let dest = (Ipv4Addr::new(255, 255, 255, 255), 9);
+
+        let socket = UdpSocket::bind(source)?;
+        socket.set_broadcast(true)?;
+        socket.send_to(&self.bytes, dest)?;
+
+        Ok(())
+    }
+
+    pub fn magic_bytes(&self) -> &[u8; Self::SIZE] {
+        &self.bytes
     }
 }
