@@ -1,7 +1,5 @@
 use std::net::{Ipv4Addr, UdpSocket};
 
-pub type MacAddress = [u8; 6];
-
 // magic packet is a frame that contains 6 bytes of all 255 (FF FF FF FF FF FF in hexadecimal),
 // followed by sixteen repetitions of the target computer's 48-bit MAC address,
 // for a total of 102 bytes
@@ -20,7 +18,7 @@ impl MagicPacket {
         bytes[..6].copy_from_slice(&Self::HEADER);
         bytes[6..]
             .chunks_exact_mut(6)
-            .for_each(|c| c.copy_from_slice(mac_address));
+            .for_each(|c| c.copy_from_slice(&mac_address.bytes));
 
         Self { bytes }
     }
@@ -39,5 +37,42 @@ impl MagicPacket {
 
     pub fn magic_bytes(&self) -> &[u8; Self::SIZE] {
         &self.bytes
+    }
+}
+
+#[derive(Debug)]
+pub struct MacAddress {
+    pub bytes: [u8; 6],
+}
+
+impl From<[u8; 6]> for MacAddress {
+    fn from(bytes: [u8; 6]) -> Self {
+        Self { bytes }
+    }
+}
+
+#[derive(Debug)]
+pub enum MacAddressParseError {
+    InvalidLen(usize),
+    ParseIntError(std::num::ParseIntError),
+}
+
+impl TryFrom<&str> for MacAddress {
+    type Error = MacAddressParseError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        let hex = s.replace([':'], "");
+
+        if hex.len() != 12 {
+            return Err(Self::Error::InvalidLen(hex.len()));
+        }
+
+        let mut bytes = [0u8; 6];
+        for i in 0..6 {
+            let b = &hex[i * 2..i * 2 + 2];
+            bytes[i] = u8::from_str_radix(b, 16).map_err(|e| Self::Error::ParseIntError(e))?;
+        }
+
+        Ok(Self { bytes })
     }
 }
