@@ -1,13 +1,29 @@
-use std::net::ToSocketAddrs;
+use std::net::{IpAddr, ToSocketAddrs};
 
 use crate::magic_packet::{MacAddress, MagicPacket};
+use clap::Parser;
 use tiny_http::Response;
 
 mod magic_packet;
 
+static DEFAULT_ADDR: &str = "127.0.0.1";
+static DEFAULT_PORT: u16 = 6789;
+
+#[derive(Debug, clap::Parser)]
+struct Args {
+    #[arg(short = 'a', long, default_value = DEFAULT_ADDR )]
+    listen_addr: IpAddr,
+
+    #[arg(short = 'p', long, default_value_t = DEFAULT_PORT)]
+    listen_port: u16,
+}
+
 fn main() -> std::io::Result<()> {
     env_logger::init();
-    serve("127.0.0.1:9090")
+
+    let args = Args::parse();
+
+    serve((args.listen_addr, args.listen_port))
 }
 
 fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
@@ -17,7 +33,7 @@ fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
     })?;
 
     let server = tiny_http::Server::http(addr).unwrap();
-    log::info!("Started server listening on {addr}");
+    log::info!("Started wolay server listening on {addr}");
 
     loop {
         let req = server.recv()?;
