@@ -6,6 +6,7 @@ use tiny_http::Response;
 mod magic_packet;
 
 fn main() -> std::io::Result<()> {
+    env_logger::init();
     serve("127.0.0.1:9090")
 }
 
@@ -16,31 +17,43 @@ fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
     })?;
 
     let server = tiny_http::Server::http(addr).unwrap();
-    log::info!("Started server running on {addr}");
+    log::info!("Started server listening on {addr}");
 
     loop {
         let req = server.recv()?;
 
-        log::info!("Recieved request from {:#?}", req.remote_addr());
+        log::debug!(
+            "Recieved request from {:?} for {}",
+            req.remote_addr(),
+            req.url()
+        );
 
+        let response: Response<_>;
         let path = req.url();
         if !path.starts_with("/api/wake/") {
-            let response =
+            response =
                 Response::from_string("Not found. Use \"/api/wake/<mac>\".").with_status_code(404);
-            let _ = req.respond(response);
+            if let Err(e) = req.respond(response) {
+                log::error!("Failed responding: {e}");
+            }
             continue;
         }
 
         if let Some(mac_str) = path.split('/').last() {
-            let response: Response<_>;
-
             match MacAddress::try_from(mac_str) {
                 Ok(mac) => {
                     let mp = MagicPacket::new(&mac);
-                    mp.send()?;
-                    log::info!("Successfully sent magic packet to {mac_str}");
-                    response = Response::from_string(format!("Sent magic packet to {mac_str}"))
-                        .with_status_code(200);
+                    if let Err(e) = mp.send() {
+                        log::error!("Failed sending magic packet to {mac_str}: {e}");
+                        response = Response::from_string(format!(
+                            "Failed sending magic packet to {mac_str}"
+                        ))
+                        .with_status_code(500);
+                    } else {
+                        log::info!("Successfully sent magic packet to {mac_str}");
+                        response = Response::from_string(format!("Sent magic packet to {mac_str}"))
+                            .with_status_code(200);
+                    }
                 }
                 Err(e) => {
                     log::error!("Failed parsing MAC address from '{mac_str}': {e:?}");
@@ -50,7 +63,9 @@ fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
                 }
             }
 
-            let _ = req.respond(response);
+            if let Err(e) = req.respond(response) {
+                log::error!("Failed responding: {e}");
+            }
         }
     }
 }
