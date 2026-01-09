@@ -19,7 +19,8 @@ struct Args {
 }
 
 fn main() -> std::io::Result<()> {
-    env_logger::init();
+    let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
+    env_logger::init_from_env(env);
 
     let args = Args::parse();
 
@@ -66,7 +67,7 @@ fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
                         ))
                         .with_status_code(500);
                     } else {
-                        log::info!("Successfully sent magic packet to {mac_str}");
+                        log::info!("Sent magic packet to {mac_str}");
                         response = Response::from_string(format!("Sent magic packet to {mac_str}"))
                             .with_status_code(200);
                     }
