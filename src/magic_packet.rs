@@ -34,10 +34,6 @@ impl MagicPacket {
 
         Ok(())
     }
-
-    pub fn magic_bytes(&self) -> &[u8; Self::SIZE] {
-        &self.bytes
-    }
 }
 
 #[derive(Debug)]

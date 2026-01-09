@@ -42,5 +42,6 @@ dependencies = [
 name = "wolay"
 version = "0.1.0"
 dependencies = [
+ "log",
  "tiny_http",
 ]
