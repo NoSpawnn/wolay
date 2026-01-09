@@ -11,7 +11,7 @@ static DEFAULT_PORT: u16 = 6789;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    #[arg(short = 'a', long, default_value = DEFAULT_ADDR )]
+    #[arg(short = 'a', long, default_value = DEFAULT_ADDR)]
     listen_addr: IpAddr,
 
     #[arg(short = 'p', long, default_value_t = DEFAULT_PORT)]
