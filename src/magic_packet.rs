@@ -1,4 +1,7 @@
-use std::net::{Ipv4Addr, UdpSocket};
+use std::{
+    fmt::{Display, Write},
+    net::{Ipv4Addr, UdpSocket},
+};
 
 // magic packet is a frame that contains 6 bytes of all 255 (FF FF FF FF FF FF in hexadecimal),
 // followed by sixteen repetitions of the target computer's 48-bit MAC address,
@@ -70,5 +73,17 @@ impl TryFrom<&str> for MacAddress {
         }
 
         Ok(Self { bytes })
+    }
+}
+
+impl Display for MacAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = self
+            .bytes
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<Vec<_>>()
+            .join(":");
+        write!(f, "{s}")
     }
 }

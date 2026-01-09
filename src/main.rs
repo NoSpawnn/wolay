@@ -67,8 +67,8 @@ fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
                         ))
                         .with_status_code(500);
                     } else {
-                        log::info!("Sent magic packet to {mac_str}");
-                        response = Response::from_string(format!("Sent magic packet to {mac_str}"))
+                        log::info!("Sent magic packet to {mac}");
+                        response = Response::from_string(format!("Sent magic packet to {mac}"))
                             .with_status_code(200);
                     }
                 }
