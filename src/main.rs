@@ -1,40 +1,73 @@
-use std::net::{IpAddr, ToSocketAddrs};
+use std::{
+    net::{IpAddr, SocketAddr, ToSocketAddrs},
+    thread,
+};
 
 use crate::magic_packet::{MacAddress, MagicPacket};
+use anyhow::anyhow;
 use clap::Parser;
 use tiny_http::Response;
 
 mod magic_packet;
 
-static DEFAULT_ADDR: &str = "127.0.0.1";
-static DEFAULT_PORT: u16 = 6789;
+const DEFAULT_ADDR: IpAddr = IpAddr::V4(std::net::Ipv4Addr::LOCALHOST);
+const DEFAULT_PORT: u16 = 6789;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
-    #[arg(short = 'a', long, default_value = DEFAULT_ADDR)]
+    /// Define multiple addresses for wolay to listen on (e.g. 127.0.0.1:6789)
+    #[arg(short = 'a', long, num_args = 1..)]
+    listen_addrs: Option<Vec<SocketAddr>>,
+
+    /// Define IP for wolay to listen on
+    #[arg(short = 'l', long, conflicts_with = "listen_addrs", default_value_t = DEFAULT_ADDR)]
     listen_addr: IpAddr,
 
-    #[arg(short = 'p', long, default_value_t = DEFAULT_PORT)]
+    /// Define port for wolay to listen on
+    #[arg(short = 'p', long, conflicts_with = "listen_addrs",default_value_t = DEFAULT_PORT)]
     listen_port: u16,
 }
 
-fn main() -> std::io::Result<()> {
+fn main() -> anyhow::Result<()> {
     let env = env_logger::Env::default().filter_or("RUST_LOG", "info");
     env_logger::init_from_env(env);
 
     let args = Args::parse();
 
-    serve((args.listen_addr, args.listen_port))
+    if let Some(listen_addrs) = args.listen_addrs {
+        serve(listen_addrs.into_iter())
+    } else {
+        serve(std::iter::once((args.listen_addr, args.listen_port)))
+    }
 }
 
-fn serve<A: ToSocketAddrs>(addr: A) -> std::io::Result<()> {
-    let addrs = addr.to_socket_addrs()?;
-    let addr = addrs.into_iter().next().ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, "no socket addresses")
-    })?;
+fn serve<A: ToSocketAddrs>(addrs: impl Iterator<Item = A>) -> anyhow::Result<()> {
+    let addrs: Vec<_> = addrs
+        .map(|a| a.to_socket_addrs())
+        .collect::<std::io::Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect();
 
-    let server = tiny_http::Server::http(addr).unwrap();
-    log::info!("Started wolay server listening on {addr}");
+    let mut listeners = Vec::with_capacity(addrs.len());
+    for addr in addrs {
+        let server =
+            tiny_http::Server::http(addr).map_err(|e| anyhow!("Failed to start server: {e:?}"))?;
+        let listener = thread::spawn(move || server_func(server));
+        listeners.push(listener);
+    }
+
+    for listener in listeners {
+        listener
+            .join()
+            .map_err(|e| anyhow!("Server thread panicked: {e:?}"))??;
+    }
+
+    Ok(())
+}
+
+fn server_func(server: tiny_http::Server) -> anyhow::Result<()> {
+    log::info!("Started wolay server listening on {}", server.server_addr());
 
     loop {
         let req = server.recv()?;
