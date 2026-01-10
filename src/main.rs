@@ -69,12 +69,13 @@ fn serve<A: ToSocketAddrs>(addrs: &[A]) -> anyhow::Result<()> {
 
 fn server_func(server: tiny_http::Server) -> anyhow::Result<()> {
     log::info!("Started wolay server listening on {}", server.server_addr());
+    let listen_addr = server.server_addr();
 
     loop {
         let req = server.recv()?;
 
         log::debug!(
-            "Recieved request from {:?} for {}",
+            "[{listen_addr}] Recieved request from {:?} for {}",
             req.remote_addr(),
             req.url()
         );
@@ -101,8 +102,8 @@ fn server_func(server: tiny_http::Server) -> anyhow::Result<()> {
                         ))
                         .with_status_code(500);
                     } else {
-                        log::info!("Sent magic packet to {mac}");
-                        response = Response::from_string(format!("Sent magic packet to {mac}"))
+                        log::info!("[{listen_addr}] Sent magic packet to {mac}");
+                        response = Response::from_string(format!("Sent magic packet to {mac}",))
                             .with_status_code(200);
                     }
                 }
