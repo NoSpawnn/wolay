@@ -1,5 +1,5 @@
 use std::{
-    net::{IpAddr, SocketAddr, ToSocketAddrs},
+    net::{IpAddr, SocketAddr, SocketAddrV4, ToSocketAddrs},
     thread,
 };
 
@@ -33,16 +33,17 @@ fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(env);
 
     let args = Args::parse();
+    let addrs = args.listen_addrs.unwrap_or(Vec::from([SocketAddr::new(
+        args.listen_addr,
+        args.listen_port,
+    )]));
 
-    if let Some(listen_addrs) = args.listen_addrs {
-        serve(listen_addrs.into_iter())
-    } else {
-        serve(std::iter::once((args.listen_addr, args.listen_port)))
-    }
+    serve(&addrs)
 }
 
-fn serve<A: ToSocketAddrs>(addrs: impl Iterator<Item = A>) -> anyhow::Result<()> {
+fn serve<A: ToSocketAddrs>(addrs: &[A]) -> anyhow::Result<()> {
     let addrs: Vec<_> = addrs
+        .iter()
         .map(|a| a.to_socket_addrs())
         .collect::<std::io::Result<Vec<_>>>()?
         .into_iter()
