@@ -52,7 +52,7 @@ fn serve<A: ToSocketAddrs>(addrs: impl Iterator<Item = A>) -> anyhow::Result<()>
     let mut listeners = Vec::with_capacity(addrs.len());
     for addr in addrs {
         let server =
-            tiny_http::Server::http(addr).map_err(|e| anyhow!("Failed to start server: {e:?}"))?;
+            tiny_http::Server::http(addr).map_err(|e| anyhow!("Failed to start server: {e}"))?;
         let listener = thread::spawn(move || server_func(server));
         listeners.push(listener);
     }
