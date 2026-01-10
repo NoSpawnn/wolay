@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
 fn serve<A: ToSocketAddrs>(addrs: &[A]) -> anyhow::Result<()> {
     let addrs: Vec<_> = addrs
         .iter()
-        .map(|a| a.to_socket_addrs())
+        .map(ToSocketAddrs::to_socket_addrs)
         .collect::<std::io::Result<Vec<_>>>()?
         .into_iter()
         .flatten()
