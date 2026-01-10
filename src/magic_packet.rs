@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Display, Write},
+    fmt::Display,
     net::{Ipv4Addr, UdpSocket},
 };
 
