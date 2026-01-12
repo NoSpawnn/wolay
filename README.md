@@ -41,13 +41,15 @@ cd wolay
   - For your current system
 
     ```sh
+    nix build
+    # or
     cargo build
     ```
 
   - Cross compile
 
     ```sh
-    nix build
+    nix build .#armv7
     ```
 
 ## Refs
