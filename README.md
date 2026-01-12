@@ -25,6 +25,8 @@
     - e.g. with `curl`
       `curl raspberrypi.internal:6789/api/wake/aaaaaaaaaaaa`
 
+  - The formatting of the MAC address is case-insensitive, and can include or omit `:` characters
+
 ### Development
 
 1. Clone repo
