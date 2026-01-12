@@ -49,7 +49,7 @@ cd wolay
   - Cross compile
 
     ```sh
-    nix build .#armv7
+    nix build .#armv7-unknown-linux-musleabihf
     ```
 
 ## Refs

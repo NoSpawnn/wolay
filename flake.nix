@@ -11,35 +11,15 @@
 
   outputs =
     {
-      nixpkgs,
       flake-parts,
       naersk,
       fenix,
       ...
     }@inputs:
-    let
-      pkgs = import nixpkgs;
-    in
-    {
-      devShell =
-        with pkgs;
-        mkShell {
-          buildInputs = [
-            cargo
-            rustc
-            rustfmt
-            rustPackages.clippy
-          ];
-          RUST_SRC_PATH = rustPlatform.rustLibSrc;
-        };
-    }
-    // (flake-parts.lib.mkFlake { inherit inputs; } {
+    flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
-        "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-        "armv7-unknown-linux-musleabihf"
+        # "x86_64-darwin"
       ];
 
       perSystem =
@@ -47,31 +27,44 @@
         let
           naersk-lib = pkgs.callPackage naersk { };
 
-          armv7Target = "armv7-unknown-linux-musleabihf";
-          armv7CrossPkgs = pkgs.pkgsCross.muslpi;
-          armv7Toolchain =
-            with fenix.packages.${system};
-            combine [
-              minimal.cargo
-              minimal.rustc
-              targets.${armv7Target}.latest.rust-std
-            ];
+          armv7 = {
+            target = "armv7-unknown-linux-musleabihf";
+            crossPkgs = pkgs.pkgsCross.muslpi;
+            toolchain =
+              with fenix.packages.${system};
+              combine [
+                minimal.cargo
+                minimal.rustc
+                targets.${armv7.target}.latest.rust-std
+              ];
+          };
         in
         {
+          devShells.default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              cargo
+              rustc
+              rustfmt
+              rustPackages.clippy
+            ];
+            RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
+          };
+
           packages.default = naersk-lib.buildPackage ./.;
-          packages.armv7 =
+
+          packages.${armv7.target} =
             (naersk.lib.${system}.override {
-              cargo = armv7Toolchain;
-              rustc = armv7Toolchain;
+              cargo = armv7.toolchain;
+              rustc = armv7.toolchain;
             }).buildPackage
               {
                 src = ./.;
-                CARGO_BUILD_TARGET = armv7Target;
-                CC_armv7_unknown_linux_musleabihf = "${armv7CrossPkgs.stdenv.cc}/bin/${armv7CrossPkgs.stdenv.cc.targetPrefix}cc";
-                AR_armv7_unknown_linux_musleabihf = "${armv7CrossPkgs.stdenv.cc.bintools}/bin/${armv7CrossPkgs.stdenv.cc.targetPrefix}ar";
-                CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER = "${armv7CrossPkgs.stdenv.cc}/bin/${armv7CrossPkgs.stdenv.cc.targetPrefix}cc";
+                CARGO_BUILD_TARGET = armv7.target;
+                CC_armv7_unknown_linux_musleabihf = "${armv7.crossPkgs.stdenv.cc}/bin/${armv7.crossPkgs.stdenv.cc.targetPrefix}cc";
+                AR_armv7_unknown_linux_musleabihf = "${armv7.crossPkgs.stdenv.cc.bintools}/bin/${armv7.crossPkgs.stdenv.cc.targetPrefix}ar";
+                CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER = "${armv7.crossPkgs.stdenv.cc}/bin/${armv7.crossPkgs.stdenv.cc.targetPrefix}cc";
                 RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
               };
         };
-    });
+    };
 }
