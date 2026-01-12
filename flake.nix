@@ -18,7 +18,7 @@
       naersk,
     }:
     flake-utils.lib.eachDefaultSystem (system: {
-      defaultPackage =
+      packages.default =
         let
           target = "armv7-unknown-linux-musleabihf";
           pkgs = nixpkgs.legacyPackages.${system};
