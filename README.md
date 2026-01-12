@@ -4,7 +4,7 @@
 
 ## Features
 
-- [ ] Wake-On-LAN relay (basically done)
+- [x] Wake-On-LAN relay
 - [ ] Shutdown/WOL on a schedule
 
 ## Usage
