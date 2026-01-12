@@ -84,7 +84,7 @@ fn server_func(server: tiny_http::Server) -> anyhow::Result<()> {
         let path = req.url();
         if !path.starts_with("/api/wake/") {
             response =
-                Response::from_string("Not found. Use \"/api/wake/<mac>\".").with_status_code(404);
+                Response::from_string("Not found. Use \"/api/wake/<mac>\".\n").with_status_code(404);
             if let Err(e) = req.respond(response) {
                 log::error!("Failed responding: {e}");
             }
@@ -103,14 +103,14 @@ fn server_func(server: tiny_http::Server) -> anyhow::Result<()> {
                         .with_status_code(500);
                     } else {
                         log::info!("[{listen_addr}] Sent magic packet to {mac}");
-                        response = Response::from_string(format!("Sent magic packet to {mac}",))
+                        response = Response::from_string(format!("Sent magic packet to {mac}\n",))
                             .with_status_code(200);
                     }
                 }
                 Err(e) => {
                     log::error!("Failed parsing MAC address from '{mac_str}': {e:?}");
                     response =
-                        Response::from_string(format!("Malformed MAC address '{mac_str}': {e:?}"))
+                        Response::from_string(format!("Malformed MAC address '{mac_str}': {e:?}\n"))
                             .with_status_code(500);
                 }
             }
