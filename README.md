@@ -9,6 +9,22 @@
 
 ## Usage
 
+  ```
+  ./wolay --help
+  Usage: wolay [OPTIONS]
+  
+  Options:
+    -a, --listen-addrs <LISTEN_ADDRS>...  Define multiple addresses for wolay to listen on (e.g. 127.0.0.1:6789)
+    -l, --listen-addr <LISTEN_ADDR>       Define IP for wolay to listen on [default: 127.0.0.1]
+    -p, --listen-port <LISTEN_PORT>       Define port for wolay to listen on [default: 6789]
+    -h, --help                            Print help
+  ```
+
+  - Run wolay as above
+  - Make a web request to `ip:port/api/wake/<mac>`
+    - e.g. with `curl`
+      `curl pi@raspberrypi.internal:6789/api/wake/aaaaaaaaaaaa`
+
 ### Development
 
 1. Clone repo
