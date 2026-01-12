@@ -23,7 +23,7 @@
   - Run wolay as above
   - Make a web request to `ip:port/api/wake/<mac>`
     - e.g. with `curl`
-      `curl pi@raspberrypi.internal:6789/api/wake/aaaaaaaaaaaa`
+      `curl raspberrypi.internal:6789/api/wake/aaaaaaaaaaaa`
 
 ### Development
 
