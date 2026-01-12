@@ -20,8 +20,9 @@
     flake-utils.lib.eachDefaultSystem (system: {
       defaultPackage =
         let
-          target = "armv7-unknown-linux-gnueabihf";
+          target = "armv7-unknown-linux-musleabihf";
           pkgs = nixpkgs.legacyPackages.${system};
+          cross = pkgs.pkgsCross.muslpi;
           toolchain =
             with fenix.packages.${system};
             combine [
@@ -37,11 +38,9 @@
           {
             src = ./.;
             CARGO_BUILD_TARGET = target;
-            CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER =
-              let
-                inherit (pkgs.pkgsCross.armv7l-hf-multiplatform.stdenv) cc;
-              in
-              "${cc}/bin/${cc.targetPrefix}cc";
+            CC_armv7_unknown_linux_musleabihf = "${cross.stdenv.cc}/bin/${cross.stdenv.cc.targetPrefix}cc";
+            AR_armv7_unknown_linux_musleabihf = "${cross.stdenv.cc.bintools}/bin/${cross.stdenv.cc.targetPrefix}ar";
+            CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER = "${cross.stdenv.cc}/bin/${cross.stdenv.cc.targetPrefix}cc";
           };
     });
 }
